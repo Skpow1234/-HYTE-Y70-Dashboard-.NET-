@@ -1,0 +1,16 @@
+{
+  "mode": "auto",
+  "fps": 20,
+  "gif": "",
+  "rotate": 0,
+  "flipHorizontal": false,
+  "flipVertical": false,
+  "fit": "contain",
+  "zoom": 1.0,
+  "showClock": true,
+  "showCpu": true,
+  "showGpu": true,
+  "showRam": true,
+  "startHidden": false,
+  "runAtLogin": false
+}

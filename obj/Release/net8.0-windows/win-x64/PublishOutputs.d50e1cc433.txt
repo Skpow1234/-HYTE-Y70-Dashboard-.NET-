@@ -1,0 +1,3 @@
+C:\Users\Juan\Desktop\Ingenieria inversa\hyte-y70-net\publish\HyteY70.pdb
+C:\Users\Juan\Desktop\Ingenieria inversa\hyte-y70-net\publish\config.json
+C:\Users\Juan\Desktop\Ingenieria inversa\hyte-y70-net\publish\HyteY70.exe
