@@ -10,6 +10,7 @@ public partial class App : System.Windows.Application
     private Mutex? _mutex;
     private Forms.NotifyIcon? _tray;
     private MainWindow? _window;
+    private ConfigWatcher? _watcher;
     private string _baseDir = "";
 
     protected override void OnStartup(StartupEventArgs e)
@@ -26,6 +27,7 @@ public partial class App : System.Windows.Application
         _baseDir = AppContext.BaseDirectory;
         var config = AppConfig.Load(_baseDir);
         StartupHelper.Apply(config.RunAtLogin, Path.Combine(_baseDir, "HyteY70.exe"));
+        _watcher = new ConfigWatcher(_baseDir, () => Dispatcher.Invoke(ReloadConfig), config.WatchConfig);
 
         MonitorBounds bounds;
         try
@@ -76,6 +78,8 @@ public partial class App : System.Windows.Application
         {
             var config = AppConfig.Load(_baseDir);
             StartupHelper.Apply(config.RunAtLogin, Path.Combine(_baseDir, "HyteY70.exe"));
+            _watcher?.Dispose();
+            _watcher = new ConfigWatcher(_baseDir, () => Dispatcher.Invoke(ReloadConfig), config.WatchConfig);
             _window?.ApplyConfig(config);
             _tray!.ContextMenuStrip = BuildMenu();
             _tray.ShowBalloonTip(2500, "HYTE Y70", $"Config recargada — {_window?.StatusText}", Forms.ToolTipIcon.Info);
@@ -96,6 +100,7 @@ public partial class App : System.Windows.Application
 
     private void ExitApp()
     {
+        _watcher?.Dispose();
         _tray!.Visible = false;
         _tray.Dispose();
         _window?.Close();
@@ -104,6 +109,7 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _watcher?.Dispose();
         _tray?.Dispose();
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();

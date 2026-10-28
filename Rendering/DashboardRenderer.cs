@@ -25,6 +25,8 @@ public sealed class DashboardRenderer : IDisposable
     private readonly bool _showCpu;
     private readonly bool _showGpu;
     private readonly bool _showRam;
+    private readonly bool _overlayStats;
+    private readonly Color _letterbox;
     private readonly Font _clockFont;
     private readonly Font _titleFont;
     private readonly Font _valueFont;
@@ -34,6 +36,11 @@ public sealed class DashboardRenderer : IDisposable
     private readonly Graphics _graphics;
 
     public bool MediaMode => _mediaMode;
+
+    public int GetMediaFrameIndex(TimeSpan elapsed) => FrameIndex(elapsed);
+
+    public int GetMediaFrameDurationMs(int index) =>
+        index >= 0 && index < _durations.Length ? _durations[index] : 80;
 
     public DashboardRenderer(int width, int height, AppConfig config, string? mediaPath)
     {
@@ -48,6 +55,8 @@ public sealed class DashboardRenderer : IDisposable
         _showCpu = config.ShowCpu;
         _showGpu = config.ShowGpu;
         _showRam = config.ShowRam;
+        _overlayStats = config.OverlayStats;
+        _letterbox = config.ParseLetterboxColor();
 
         _clockFont = new Font("Segoe UI", 28, FontStyle.Regular, GraphicsUnit.Pixel);
         _titleFont = new Font("Segoe UI Semibold", 28, FontStyle.Bold, GraphicsUnit.Pixel);
@@ -108,6 +117,14 @@ public sealed class DashboardRenderer : IDisposable
             int index = FrameIndex(elapsed);
             _media.SelectActiveFrame(_dimension, index);
             DrawMedia(g, _media);
+            if (_overlayStats)
+            {
+                g.ResetTransform();
+                g.CompositingMode = CompositingMode.SourceOver;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+                DrawOverlay(g, stats, clock);
+            }
         }
         else
         {
@@ -157,7 +174,7 @@ public sealed class DashboardRenderer : IDisposable
         int h = Math.Max(1, (int)(source.Height * scale));
         int x = (targetW - w) / 2;
         int y = (targetH - h) / 2;
-        g.Clear(Color.Black);
+        g.Clear(_letterbox);
         g.DrawImage(source, new Rectangle(x, y, w, h));
     }
 
@@ -204,7 +221,11 @@ public sealed class DashboardRenderer : IDisposable
 
         var cards = new List<(string Title, string Value, string Sub, Color Accent)>();
         if (_showCpu)
-            cards.Add(("CPU", Text(stats.CpuPercent, "%"), stats.CpuMhz is null ? "carga" : $"{stats.CpuMhz.Value / 1000:0.00} GHz", Color.FromArgb(126, 196, 255)));
+        {
+            string cpuSub = stats.CpuMhz is null ? "carga" : $"{stats.CpuMhz.Value / 1000:0.00} GHz";
+            if (stats.CpuTemp is not null) cpuSub = $"{stats.CpuTemp:0}°   ·   {cpuSub}";
+            cards.Add(("CPU", Text(stats.CpuPercent, "%"), cpuSub, Color.FromArgb(126, 196, 255)));
+        }
         if (_showGpu)
             cards.Add(("GPU", Text(stats.GpuTemp, "°"), $"hot {Text(stats.GpuHotspot, "°")}   ·   uso {Text(stats.GpuPercent, "%")}", Color.FromArgb(255, 176, 92)));
         if (_showRam)
@@ -219,6 +240,19 @@ public sealed class DashboardRenderer : IDisposable
 
         using var footerBrush = new SolidBrush(Color.FromArgb(200, 180, 190, 205));
         g.DrawString(stats.GpuName, _footerFont, footerBrush, margin, _height - 86);
+    }
+
+    private void DrawOverlay(Graphics g, Stats stats, string clock)
+    {
+        const int pad = 36;
+        using var bg = new SolidBrush(Color.FromArgb(150, 8, 12, 22));
+        g.FillRectangle(bg, 0, 0, _width, 120);
+        using var text = new SolidBrush(Color.FromArgb(240, 235, 240, 248));
+        string line = clock;
+        if (_showCpu) line += $"   CPU {Text(stats.CpuPercent, "%")}" + (stats.CpuTemp is null ? "" : $" {stats.CpuTemp:0}°");
+        if (_showGpu) line += $"   GPU {Text(stats.GpuTemp, "°")}";
+        if (_showRam) line += $"   RAM {Text(stats.RamPercent, "%")}";
+        g.DrawString(line, _subFont, text, pad, 42);
     }
 
     private void DrawCard(Graphics g, Rectangle box, string title, string value, string subtitle, Color accent)

@@ -19,3 +19,4 @@ C:\Users\Juan\Desktop\Ingenieria inversa\hyte-y70-net\obj\Release\net8.0-windows
 C:\Users\Juan\Desktop\Ingenieria inversa\hyte-y70-net\obj\Release\net8.0-windows\win-x64\HyteY70.pdb
 C:\Users\Juan\Desktop\Ingenieria inversa\hyte-y70-net\obj\Release\net8.0-windows\win-x64\HyteY70.genruntimeconfig.cache
 C:\Users\Juan\Desktop\Ingenieria inversa\hyte-y70-net\obj\Release\net8.0-windows\win-x64\ref\HyteY70.dll
+C:\Users\Juan\Desktop\Ingenieria inversa\hyte-y70-net\obj\Release\net8.0-windows\win-x64\HyteY70.sourcelink.json

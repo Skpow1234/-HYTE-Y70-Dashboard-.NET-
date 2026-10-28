@@ -1,11 +1,25 @@
 # HYTE Y70 Dashboard (.NET)
 
-Ejecutable nativo (WPF). Doble clic en `publish\HyteY70.exe`.
+Cliente **nativo** (WPF) para el monitor **HYTE Y70 Touch Infinite**.  
+Sin Electron, sin Nexus, sin Chromium.
+
+Doble clic: `publish\HyteY70.exe`
+
+## Peso y objetivo
+
+| | Aprox. |
+|--|--|
+| `.exe` (framework-dependent) | **~190 KB** |
+| RAM en uso | **~40–90 MB** privados típicos |
+| Referencia a evitar | Nexus / Electron (cientos de MB) |
+
+**Objetivo:** nativo, rápido y lo más liviano posible.
+
+Requiere [**.NET 8 Desktop Runtime**](https://dotnet.microsoft.com/download/dotnet/8.0).
 
 ## Modos
 
-- `mode: auto` — sin media → estadísticas; con GIF/imagen → solo media
-- `mode: stats` / `mode: media`
+- `mode: auto` / `stats` / `media`
 
 ## Config (`config.json`)
 
@@ -13,28 +27,29 @@ Ejecutable nativo (WPF). Doble clic en `publish\HyteY70.exe`.
 {
   "mode": "auto",
   "fps": 20,
+  "fpsIdle": 2,
   "gif": "",
   "rotate": 0,
-  "flipHorizontal": false,
-  "flipVertical": false,
   "fit": "contain",
   "zoom": 1.0,
+  "letterboxColor": "#000000",
   "showClock": true,
   "showCpu": true,
   "showGpu": true,
   "showRam": true,
-  "startHidden": false,
+  "overlayStats": false,
+  "watchConfig": true,
   "runAtLogin": false
 }
 ```
 
+- `overlayStats`: barra fina de stats encima del GIF/imagen (opt-in)
+- `fpsIdle` / `letterboxColor` / `watchConfig`: igual que Thermalright
+- Temp CPU vía HWiNFO Shared Memory si está disponible
+
 ## Bandeja
 
-- Mostrar / ocultar en la Y70
-- Recargar config
-- Abrir carpeta de config
-- Iniciar con Windows
-- Salir (Esc solo oculta)
+- Mostrar / ocultar / Recargar config / Carpeta / Inicio con Windows / Salir
 
 ## Publicar
 

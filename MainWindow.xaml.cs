@@ -19,6 +19,7 @@ public partial class MainWindow : Window
     private readonly string _baseDir;
     private DashboardRenderer _renderer;
     private AppConfig _config;
+    private int _lastMediaFrame = -1;
 
     public MainWindow(MonitorBounds bounds, AppConfig config, string baseDir)
     {
@@ -35,10 +36,10 @@ public partial class MainWindow : Window
         {
             Interval = FrameInterval(config.Fps)
         };
-        _timer.Tick += (_, _) => Paint();
+        _timer.Tick += (_, _) => Tick();
         Loaded += (_, _) =>
         {
-            Paint();
+            Paint(force: true);
             _timer.Start();
         };
         Closed += (_, _) =>
@@ -73,8 +74,9 @@ public partial class MainWindow : Window
         var old = _renderer;
         _renderer = CreateRenderer(config);
         old.Dispose();
+        _lastMediaFrame = -1;
         _timer.Interval = FrameInterval(config.Fps);
-        Paint();
+        Paint(force: true);
     }
 
     private DashboardRenderer CreateRenderer(AppConfig config)
@@ -87,7 +89,34 @@ public partial class MainWindow : Window
     private static TimeSpan FrameInterval(int fps) =>
         TimeSpan.FromMilliseconds(Math.Max(16, 1000.0 / Math.Max(1, fps)));
 
-    private void Paint()
+    private void Tick()
+    {
+        var elapsed = DateTime.UtcNow - _started;
+        if (_renderer.MediaMode)
+        {
+            int index = _renderer.GetMediaFrameIndex(elapsed);
+            int frameMs = _renderer.GetMediaFrameDurationMs(index);
+            if (index == _lastMediaFrame)
+            {
+                int idleFps = Math.Max(0, _config.FpsIdle);
+                _timer.Interval = idleFps <= 0
+                    ? TimeSpan.FromMilliseconds(Math.Max(16, frameMs))
+                    : FrameInterval(idleFps);
+                return;
+            }
+            _lastMediaFrame = index;
+            _timer.Interval = TimeSpan.FromMilliseconds(Math.Min(
+                Math.Max(16, 1000.0 / Math.Max(1, _config.Fps)),
+                Math.Max(16, frameMs)));
+        }
+        else
+        {
+            _timer.Interval = FrameInterval(_config.Fps);
+        }
+        Paint(force: false);
+    }
+
+    private void Paint(bool force)
     {
         using var bitmap = _renderer.Render(_stats.Sample(), DateTime.UtcNow - _started, DateTime.Now.ToString("HH:mm"));
         var data = bitmap.LockBits(

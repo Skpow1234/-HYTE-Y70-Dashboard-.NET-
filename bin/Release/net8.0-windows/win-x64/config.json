@@ -1,16 +1,20 @@
 {
   "mode": "auto",
   "fps": 20,
+  "fpsIdle": 2,
   "gif": "",
   "rotate": 0,
   "flipHorizontal": false,
   "flipVertical": false,
   "fit": "contain",
   "zoom": 1.0,
+  "letterboxColor": "#000000",
   "showClock": true,
   "showCpu": true,
   "showGpu": true,
   "showRam": true,
+  "overlayStats": false,
   "startHidden": false,
-  "runAtLogin": false
+  "runAtLogin": false,
+  "watchConfig": true
 }

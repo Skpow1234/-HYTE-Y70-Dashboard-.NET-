@@ -1,0 +1,5 @@
+bin/
+obj/
+publish/runtime.log
+runtime.log
+*.user
