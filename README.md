@@ -2,8 +2,6 @@
 
 Ejecutable nativo (WPF). Doble clic en `publish\HyteY70.exe`.
 
-Misma idea de config que Thermalright Vision.
-
 ## Modos
 
 - `mode: auto` — sin media → estadísticas; con GIF/imagen → solo media
