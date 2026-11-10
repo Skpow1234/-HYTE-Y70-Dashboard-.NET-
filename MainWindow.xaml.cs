@@ -19,6 +19,8 @@ public partial class MainWindow : Window
     private readonly string _baseDir;
     private DashboardRenderer _renderer;
     private AppConfig _config;
+    private List<string> _playlist = new();
+    private int _slideIndex;
     private int _lastMediaFrame = -1;
 
     public MainWindow(MonitorBounds bounds, AppConfig config, string baseDir)
@@ -55,10 +57,17 @@ public partial class MainWindow : Window
         };
     }
 
-    public string StatusText =>
-        _renderer.MediaMode
-            ? $"Media ({_config.Rotate}° {_config.Fit} x{_config.Zoom:0.##})"
-            : "Estadísticas";
+    public string StatusText
+    {
+        get
+        {
+            if (!_renderer.MediaMode) return "Estadísticas";
+            string slide = _playlist.Count > 1
+                ? $" {_slideIndex + 1}/{_playlist.Count}"
+                : "";
+            return $"Media{slide} ({_config.Rotate}° {_config.Fit} x{_config.Zoom:0.##})";
+        }
+    }
 
     public void ShowOnDisplay()
     {
@@ -81,9 +90,40 @@ public partial class MainWindow : Window
 
     private DashboardRenderer CreateRenderer(AppConfig config)
     {
-        string? media = config.ResolveMedia(_baseDir);
+        _playlist = config.ResolvePlaylist(_baseDir);
+        if (_playlist.Count == 0)
+            return new DashboardRenderer(_width, _height, config, null);
+
+        if (config.SlideSeconds > 0 && _playlist.Count > 1)
+        {
+            int period = Math.Max(1, config.SlideSeconds);
+            _slideIndex = (int)((DateTime.UtcNow - _started).TotalSeconds / period) % _playlist.Count;
+        }
+        else
+            _slideIndex = Math.Clamp(_slideIndex, 0, _playlist.Count - 1);
+
+        string media = _playlist[_slideIndex];
         string? path = config.UseMedia(media) ? media : null;
         return new DashboardRenderer(_width, _height, config, path);
+    }
+
+    private bool TryAdvanceSlide()
+    {
+        if (_config.SlideSeconds <= 0 || _playlist.Count <= 1) return false;
+        int period = Math.Max(1, _config.SlideSeconds);
+        int next = (int)((DateTime.UtcNow - _started).TotalSeconds / period) % _playlist.Count;
+        if (next == _slideIndex) return false;
+
+        _slideIndex = next;
+        var old = _renderer;
+        _renderer = new DashboardRenderer(
+            _width,
+            _height,
+            _config,
+            _config.UseMedia(_playlist[_slideIndex]) ? _playlist[_slideIndex] : null);
+        old.Dispose();
+        _lastMediaFrame = -1;
+        return true;
     }
 
     private static TimeSpan FrameInterval(int fps) =>
@@ -91,6 +131,13 @@ public partial class MainWindow : Window
 
     private void Tick()
     {
+        if (TryAdvanceSlide())
+        {
+            _timer.Interval = FrameInterval(_config.Fps);
+            Paint(force: true);
+            return;
+        }
+
         var elapsed = DateTime.UtcNow - _started;
         if (_renderer.MediaMode)
         {
@@ -99,9 +146,13 @@ public partial class MainWindow : Window
             if (index == _lastMediaFrame)
             {
                 int idleFps = Math.Max(0, _config.FpsIdle);
-                _timer.Interval = idleFps <= 0
-                    ? TimeSpan.FromMilliseconds(Math.Max(16, frameMs))
-                    : FrameInterval(idleFps);
+                // Keep polling often enough to catch the next slideshow switch.
+                int waitMs = idleFps <= 0
+                    ? Math.Max(16, frameMs)
+                    : Math.Max(16, 1000 / Math.Max(1, idleFps));
+                if (_config.SlideSeconds > 0 && _playlist.Count > 1)
+                    waitMs = Math.Min(waitMs, 1000);
+                _timer.Interval = TimeSpan.FromMilliseconds(waitMs);
                 return;
             }
             _lastMediaFrame = index;

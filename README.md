@@ -72,6 +72,27 @@ Ejemplo GIF + barra fina de stats:
 }
 ```
 
+Ejemplo slideshow (cambia cada 5 minutos):
+
+```json
+{
+  "mode": "auto",
+  "slideshow": ["a.png", "b.png", "c.jpg"],
+  "slideSeconds": 300,
+  "fit": "cover"
+}
+```
+
+O una carpeta entera:
+
+```json
+{
+  "mediaFolder": "wallpapers",
+  "slideSeconds": 300,
+  "fit": "cover"
+}
+```
+
 ---
 
 ## Todos los parámetros
@@ -83,6 +104,9 @@ Ejemplo GIF + barra fina de stats:
 | `mode` | texto | `"auto"` | `auto` = sin media → estadísticas; con GIF/imagen → solo media. `stats` = siempre estadísticas. `media` = siempre media (si el archivo existe). |
 | `gif` | texto | `""` | Ruta a GIF o imagen. Relativa al `.exe` o absoluta. Vacío = no hay media. |
 | `media` | texto | `""` | Alias de `gif` si `gif` está vacío. |
+| `slideshow` | lista | `[]` | Lista de GIFs/imágenes. Si tiene ítems, sustituye a `gif`/`media`. |
+| `mediaFolder` | texto | `""` | Carpeta con imágenes (orden alfabético). Se usa si `slideshow` está vacío. |
+| `slideSeconds` | número | `0` | Segundos por imagen cuando hay 2+. Ej. `300` = 5 min. `0` = no cambia. |
 
 ### Rendimiento
 
